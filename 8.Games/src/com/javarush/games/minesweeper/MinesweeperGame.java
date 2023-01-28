@@ -4,7 +4,6 @@ import com.javarush.engine.cell.Color;
 import com.javarush.engine.cell.Game;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MinesweeperGame extends Game {
     private static final int SIDE = 15;
@@ -83,7 +82,7 @@ public class MinesweeperGame extends Game {
 
             if (gameObject.countMineNeighbors == 0) {
                 setCellValue(x, y, "");
-                List<GameObject> neighbors = getNeighbors(gameObject);
+                ArrayList<GameObject> neighbors = getNeighbors(gameObject);
                 for (GameObject neighbor : neighbors) {
                     if (!neighbor.isOpen) {
                         openTile(neighbor.x, neighbor.y);
@@ -147,8 +146,8 @@ public class MinesweeperGame extends Game {
         }
     }
 
-    private List<GameObject> getNeighbors(GameObject gameObject) {
-        List<GameObject> result = new ArrayList<>();
+    private ArrayList<GameObject> getNeighbors(GameObject gameObject) {
+        ArrayList<GameObject> result = new ArrayList<>();
 
         for (int y = gameObject.y - 1; y <= gameObject.y + 1; y++) {
             for (int x = gameObject.x - 1; x <= gameObject.x + 1; x++) {
@@ -175,7 +174,7 @@ public class MinesweeperGame extends Game {
                 GameObject gameObject = gameField[y][x];
 
                 if (!gameObject.isMine) {
-                    List<GameObject> neighbors = getNeighbors(gameObject);
+                    ArrayList<GameObject> neighbors = getNeighbors(gameObject);
                     int countMineNeighbors = 0;
 
                     for (GameObject neighbor : neighbors) {
