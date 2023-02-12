@@ -12,6 +12,5 @@ target/
 /out.log
 /out.log.*
 
-# Ignore all files with extension .<extension>
-**/*.jrtc
-**/*.iml
+*.jrtc
+*.iml
