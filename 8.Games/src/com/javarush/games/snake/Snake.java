@@ -22,13 +22,17 @@ public class Snake {
         Color color = isAlive ? Color.BLACK : Color.RED;
         for (int i = 0; i < snakeParts.size(); i++) {
             if (i == 0)
-                game.setCellValueEx(snakeParts.get(i).x, snakeParts.get(i).y, Color.NONE, HEAD_SIGN, color, 80);
+                game.setCellValueEx(snakeParts.get(i).x, snakeParts.get(i).y, Color.NONE, HEAD_SIGN, color, 75);
             else
-                game.setCellValueEx(snakeParts.get(i).x, snakeParts.get(i).y, Color.NONE, BODY_SIGN, color, 80);
+                game.setCellValueEx(snakeParts.get(i).x, snakeParts.get(i).y, Color.NONE, BODY_SIGN, color, 75);
         }
     }
 
     public void setDirection(Direction direction) {
         this.direction = direction;
+    }
+
+    public void move() {
+
     }
 }
