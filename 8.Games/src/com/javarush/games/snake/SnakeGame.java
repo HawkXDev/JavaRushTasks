@@ -16,10 +16,9 @@ public class SnakeGame extends Game {
     }
 
     private void createGame() {
+        Snake newSnake = new Snake(WIDTH / 2, HEIGHT / 2);
         turnDelay = 300;
         setTurnTimer(turnDelay);
-
-        Snake newSnake = new Snake(WIDTH / 2, HEIGHT / 2);
         this.snake = newSnake;
         drawScene();
     }
@@ -27,7 +26,7 @@ public class SnakeGame extends Game {
     private void drawScene() {
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
-                setCellColor(x, y, Color.DARKSEAGREEN);
+                setCellValueEx(x, y, Color.DARKSEAGREEN, "");
             }
         }
         snake.draw(this);
@@ -37,5 +36,17 @@ public class SnakeGame extends Game {
     public void onTurn(int step) {
         snake.move();
         drawScene();
+    }
+
+    @Override
+    public void onKeyPress(Key key) {
+        if (key == Key.LEFT)
+            snake.setDirection(Direction.LEFT);
+        else if (key == Key.RIGHT)
+            snake.setDirection(Direction.RIGHT);
+        else if (key == Key.UP)
+            snake.setDirection(Direction.UP);
+        else if (key == Key.DOWN)
+            snake.setDirection(Direction.DOWN);
     }
 }
