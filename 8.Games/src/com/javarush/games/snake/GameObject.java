@@ -1,8 +1,8 @@
 package com.javarush.games.snake;
 
 public class GameObject {
-    public int x;
-    public int y;
+    int x;
+    int y;
 
     public GameObject(int x, int y) {
         this.x = x;

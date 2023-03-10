@@ -7,11 +7,11 @@ import java.util.List;
 
 public class Snake {
 
-    private final static String HEAD_SIGN = "\uD83D\uDC7E";
-    private final static String BODY_SIGN = "\u26AB";
+    private static final String HEAD_SIGN = "\uD83D\uDC7E";
+    private static final String BODY_SIGN = "⚫";
 
-    private List<GameObject> snakeParts = new ArrayList<>();
-    public boolean isAlive = true;
+    private final List<GameObject> snakeParts = new ArrayList<>();
+    boolean isAlive = true;
     private Direction direction = Direction.LEFT;
 
     public Snake(int x, int y) {
@@ -30,18 +30,24 @@ public class Snake {
         }
     }
 
-    public void move() {
+    public void move(Apple apple) {
         GameObject newHead = createNewHead();
         if (newHead.x >= SnakeGame.WIDTH
                 || newHead.x < 0
                 || newHead.y >= SnakeGame.HEIGHT
-                || newHead.y < 0) {
+                || newHead.y < 0
+                || checkCollision(newHead)) {
             isAlive = false;
             return;
         }
 
         snakeParts.add(0, newHead);
-        removeTail();
+
+        if (newHead.x == apple.x && newHead.y == apple.y) {
+            apple.isAlive = false;
+        } else {
+            removeTail();
+        }
     }
 
     public GameObject createNewHead() {
@@ -62,16 +68,38 @@ public class Snake {
     }
 
     public void setDirection(Direction direction) {
-        if (direction == Direction.UP && this.direction == Direction.DOWN) {
-            return;
-        } else if (direction == Direction.LEFT && this.direction == Direction.RIGHT) {
-            return;
-        } else if (direction == Direction.RIGHT && this.direction == Direction.LEFT) {
-            return;
-        } else if (direction == Direction.DOWN && this.direction == Direction.UP) {
+        if (isOppositeDirection(direction) || isSameDirection(direction)) {
             return;
         }
-
         this.direction = direction;
+    }
+
+    private boolean isOppositeDirection(Direction direction) {
+        return (this.direction == Direction.LEFT && direction == Direction.RIGHT) ||
+                (this.direction == Direction.RIGHT && direction == Direction.LEFT) ||
+                (this.direction == Direction.UP && direction == Direction.DOWN) ||
+                (this.direction == Direction.DOWN && direction == Direction.UP);
+    }
+
+    private boolean isSameDirection(Direction direction) {
+        GameObject head = snakeParts.get(0);
+        GameObject neck = snakeParts.get(1);
+
+        return (direction == Direction.LEFT && head.y == neck.y) ||
+                (direction == Direction.RIGHT && head.y == neck.y) ||
+                (direction == Direction.UP && head.x == neck.x) ||
+                (direction == Direction.DOWN && head.x == neck.x);
+    }
+
+    public boolean checkCollision(GameObject head) {
+        for (GameObject sp : snakeParts) {
+            if (sp.x == head.x && sp.y == head.y)
+                return true;
+        }
+        return false;
+    }
+
+    public int getLength() {
+        return snakeParts.size();
     }
 }

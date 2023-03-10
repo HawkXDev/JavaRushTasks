@@ -5,8 +5,12 @@ import com.javarush.engine.cell.*;
 public class SnakeGame extends Game {
     public static final int WIDTH = 15;
     public static final int HEIGHT = 15;
+    private static final int GOAL = 28;
     private Snake snake;
     private int turnDelay;
+    private Apple apple;
+    private boolean isGameStopped;
+    private int score;
 
     @Override
     public void initialize() {
@@ -20,6 +24,10 @@ public class SnakeGame extends Game {
         turnDelay = 300;
         setTurnTimer(turnDelay);
         this.snake = newSnake;
+        createNewApple();
+        isGameStopped = false;
+        score = 0;
+        setScore(0);
         drawScene();
     }
 
@@ -30,23 +38,58 @@ public class SnakeGame extends Game {
             }
         }
         snake.draw(this);
+        apple.draw(this);
     }
 
     @Override
     public void onTurn(int step) {
-        snake.move();
+        snake.move(apple);
+        if (!apple.isAlive) {
+            createNewApple();
+            score += 5;
+            setScore(score);
+            turnDelay -= 10;
+            setTurnTimer(turnDelay);
+        }
+        if (!snake.isAlive) {
+            gameOver();
+        }
+        if (snake.getLength() > GOAL) {
+            win();
+        }
         drawScene();
     }
 
     @Override
     public void onKeyPress(Key key) {
         if (key == Key.LEFT)
-            snake.setDirection(Direction.LEFT);
+             snake.setDirection(Direction.LEFT);
         else if (key == Key.RIGHT)
             snake.setDirection(Direction.RIGHT);
         else if (key == Key.UP)
             snake.setDirection(Direction.UP);
         else if (key == Key.DOWN)
             snake.setDirection(Direction.DOWN);
+        else if (key == Key.SPACE && isGameStopped) {
+            createGame();
+        }
+    }
+
+    private void createNewApple() {
+        do {
+            apple = new Apple(getRandomNumber(WIDTH), getRandomNumber(HEIGHT));
+        } while (snake.checkCollision(apple));
+    }
+
+    private void gameOver() {
+        stopTurnTimer();
+        isGameStopped = true;
+        showMessageDialog(Color.RED, "Конец игры!", Color.CORAL, 75);
+    }
+
+    private void win() {
+        stopTurnTimer();
+        isGameStopped = true;
+        showMessageDialog(Color.GREEN, "Победа!", Color.BLUEVIOLET, 75);
     }
 }
