@@ -10,17 +10,17 @@ public class Entry implements Serializable {
     int hash;
 
     public Entry(int hash, Long key, String value, Entry next) {
+        this.key = key;
         this.value = value;
         this.next = next;
-        this.key = key;
         this.hash = hash;
     }
 
-    public final Long getKey() {
+    public Long getKey() {
         return key;
     }
 
-    public final String getValue() {
+    public String getValue() {
         return value;
     }
 
@@ -37,12 +37,12 @@ public class Entry implements Serializable {
     }
 
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         return Objects.hashCode(key) ^ Objects.hashCode(value);
     }
 
     @Override
-    public final String toString() {
+    public String toString() {
         return key + "=" + value;
     }
 }

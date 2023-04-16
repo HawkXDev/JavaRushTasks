@@ -22,11 +22,6 @@ public class HashMapStorageStrategy implements StorageStrategy {
     }
 
     @Override
-    public String getValue(Long key) {
-        return data.get(key);
-    }
-
-    @Override
     public Long getKey(String value) {
         for (Map.Entry<Long, String> entry : data.entrySet()) {
             if (entry.getValue().equals(value)) {
@@ -35,4 +30,10 @@ public class HashMapStorageStrategy implements StorageStrategy {
         }
         return 0L;
     }
+
+    @Override
+    public String getValue(Long key) {
+        return data.get(key);
+    }
+
 }
