@@ -1,23 +1,24 @@
 package com.javarush.task.task33.task3310.strategy;
 
 public class FileStorageStrategy implements StorageStrategy {
+
     static final int DEFAULT_INITIAL_CAPACITY = 16;
     static final long DEFAULT_BUCKET_SIZE_LIMIT = 10000;
-    FileBucket[] table = new FileBucket[DEFAULT_INITIAL_CAPACITY];
+
+    FileBucket[] table;
     int size;
     private long bucketSizeLimit = DEFAULT_BUCKET_SIZE_LIMIT;
     long maxBucketSize;
 
-    public long getBucketSizeLimit() {
-        return bucketSizeLimit;
+    public FileStorageStrategy() {
+        init();
     }
 
-    public void setBucketSizeLimit(long bucketSizeLimit) {
-        this.bucketSizeLimit = bucketSizeLimit;
-    }
-
-    final int hash(Long k) {
-        return k.hashCode();
+    private void init() {
+        table = new FileBucket[DEFAULT_INITIAL_CAPACITY];
+        for (int i = 0; i < table.length; i++) {
+            table[i] = new FileBucket();
+        }
     }
 
     static int indexFor(int hash, int length) {
@@ -29,28 +30,22 @@ public class FileStorageStrategy implements StorageStrategy {
             return null;
         }
 
-        int hash = hash(key);
-        int index = indexFor(hash, table.length);
-        FileBucket bucket = table[index];
-        for (Entry e = bucket.getEntry(); e != null; e = e.next) {
-            if (key.equals(e.key)) {
-                return e;
+        int index = indexFor(key.hashCode(), table.length);
+        for (Entry entry = table[index].getEntry(); entry != null; entry = entry.next) {
+            if (key.equals(entry.key)) {
+                return entry;
             }
         }
         return null;
     }
 
-    @Override
     public void put(Long key, String value) {
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = indexFor(hash, table.length);
-        FileBucket bucket = table[index];
-        if (bucket != null) {
-            for (Entry e = bucket.getEntry(); e != null; e = e.next) {
-                if (key.equals(e.key)) {
-                    e.value = value;
-                    return;
-                }
+        for (Entry e = table[index].getEntry(); e != null; e = e.next) {
+            if (key.equals(e.key)) {
+                e.value = value;
+                return;
             }
         }
         addEntry(hash, key, value, index);
@@ -58,90 +53,91 @@ public class FileStorageStrategy implements StorageStrategy {
 
     void resize(int newCapacity) {
         FileBucket[] newTable = new FileBucket[newCapacity];
+
+        for (int i = 0; i < newTable.length; i++)
+            newTable[i] = new FileBucket();
+
         transfer(newTable);
+
+        for (int i = 0; i < table.length; i++)
+            table[i].remove();
+
         table = newTable;
     }
 
     void transfer(FileBucket[] newTable) {
         int newCapacity = newTable.length;
-        for (FileBucket bucket : table) {
-            Entry entry = bucket.getEntry();
-            int indexInNewTable = indexFor(entry.hash, newCapacity);
-            FileBucket newBucket = new FileBucket();
-            newBucket.putEntry(entry);
-            newTable[indexInNewTable] = newBucket;
-            bucket.remove();
+        maxBucketSize = 0;
+
+        for (FileBucket fileBucket : table) {
+            Entry entry = fileBucket.getEntry();
+            while (entry != null) {
+                Entry next = entry.next;
+                int indexInNewTable = indexFor(entry.getKey().hashCode(), newCapacity);
+                entry.next = newTable[indexInNewTable].getEntry();
+                newTable[indexInNewTable].putEntry(entry);
+                entry = next;
+            }
+
+            long currentBucketSize = fileBucket.getFileSize();
+            if (currentBucketSize > maxBucketSize)
+                maxBucketSize = currentBucketSize;
         }
     }
 
-    @Override
     public boolean containsValue(String value) {
-        for (FileBucket bucket : table) {
-            if (bucket != null) {
-                Entry entry = bucket.getEntry();
-                while (entry != null) {
-                    if (entry.getValue().equals(value)) {
-                        return true;
-                    }
-                    entry = entry.next;
-                }
-            }
-        }
+        for (FileBucket tableElement : table)
+            for (Entry e = tableElement.getEntry(); e != null; e = e.next)
+                if (value.equals(e.value))
+                    return true;
         return false;
     }
 
-    @Override
     public String getValue(Long key) {
         Entry entry = getEntry(key);
-        if (entry != null) {
+        if (entry != null)
             return entry.getValue();
-        }
+
         return null;
     }
 
-    @Override
     public boolean containsKey(Long key) {
         return getEntry(key) != null;
     }
 
-    @Override
     public Long getKey(String value) {
-        for (FileBucket bucket : table) {
-            Entry entry = bucket.getEntry();
-            while (entry != null) {
-                if (entry.getValue().equals(value)) {
-                    return entry.getKey();
-                }
-                entry = entry.next;
-            }
-        }
+        for (FileBucket tableElement : table)
+            for (Entry e = tableElement.getEntry(); e != null; e = e.next)
+                if (value.equals(e.value))
+                    return e.getKey();
         return null;
     }
 
     void addEntry(int hash, Long key, String value, int bucketIndex) {
-        FileBucket bucket = table[bucketIndex];
-        if (bucket != null) {
-            if (bucket.getFileSize() >= bucketSizeLimit) {
-                resize(2 * table.length);
-                hash = hash(key);
-                bucketIndex = indexFor(hash, table.length);
-            }
+        if ((maxBucketSize > bucketSizeLimit)) {
+            resize(2 * table.length);
+            bucketIndex = indexFor(key.hashCode(), table.length);
         }
 
         createEntry(hash, key, value, bucketIndex);
     }
 
     void createEntry(int hash, Long key, String value, int bucketIndex) {
-        FileBucket bucket = table[bucketIndex];
-        Entry existingEntry = null;
-        if (bucket != null) {
-            existingEntry = bucket.getEntry();
-        } else {
-            bucket = new FileBucket();
-            table[bucketIndex] = bucket;
-        }
-        Entry newEntry = new Entry(hash, key, value, existingEntry);
-        bucket.putEntry(newEntry);
+        Entry e = table[bucketIndex].getEntry();
+        table[bucketIndex].putEntry(new Entry(hash, key, value, e));
         size++;
+
+        long currentBucketSize = table[bucketIndex].getFileSize();
+        if (currentBucketSize > maxBucketSize)
+            maxBucketSize = currentBucketSize;
+    }
+
+    public long getBucketSizeLimit() {
+        return bucketSizeLimit;
+    }
+
+    public void setBucketSizeLimit(long bucketSizeLimit) {
+        this.bucketSizeLimit = bucketSizeLimit;
     }
 }
+

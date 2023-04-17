@@ -10,39 +10,38 @@ public class Entry implements Serializable {
     int hash;
 
     public Entry(int hash, Long key, String value, Entry next) {
-        this.key = key;
         this.value = value;
         this.next = next;
+        this.key = key;
         this.hash = hash;
     }
 
-    public Long getKey() {
+    public final Long getKey() {
         return key;
     }
 
-    public String getValue() {
+    public final String getValue() {
         return value;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
         Entry entry = (Entry) o;
-        return Objects.equals(key, entry.key) && Objects.equals(value, entry.value);
+
+        if (key != null ? !key.equals(entry.key) : entry.key != null) return false;
+        return value != null ? value.equals(entry.value) : entry.value == null;
+
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(key) ^ Objects.hashCode(value);
+    public final int hashCode() {
+        return Objects.hashCode(getKey()) ^ Objects.hashCode(getValue());
+
     }
 
-    @Override
-    public String toString() {
-        return key + "=" + value;
+    public final String toString() {
+        return getKey() + "=" + getValue();
     }
 }
