@@ -1,6 +1,11 @@
 package com.javarush.task.task33.task3310;
 
-import com.javarush.task.task33.task3310.strategy.*;
+import com.javarush.task.task33.task3310.strategy.DualHashBidiMapStorageStrategy;
+import com.javarush.task.task33.task3310.strategy.HashBiMapStorageStrategy;
+import com.javarush.task.task33.task3310.strategy.HashMapStorageStrategy;
+import com.javarush.task.task33.task3310.strategy.OurHashBiMapStorageStrategy;
+import com.javarush.task.task33.task3310.strategy.OurHashMapStorageStrategy;
+import com.javarush.task.task33.task3310.strategy.StorageStrategy;
 
 import java.util.Date;
 import java.util.HashSet;
