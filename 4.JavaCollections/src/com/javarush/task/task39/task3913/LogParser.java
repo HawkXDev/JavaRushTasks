@@ -1,0 +1,62 @@
+package com.javarush.task.task39.task3913;
+
+import com.javarush.task.task39.task3913.query.IPQuery;
+
+import java.io.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Stream;
+
+public class LogParser implements IPQuery {
+    private final List<String> logStrings = new ArrayList<>();
+
+    public LogParser(Path logDir) {
+        try (Stream<Path> stream = Files.walk(logDir)) {
+            stream.filter(path -> Files.isRegularFile(path) && path.toString().endsWith(".log"))
+                    .forEach((Path path) -> {
+                        try {
+                            List<String> lines = Files.readAllLines(path);
+                            logStrings.addAll(lines);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        for (String s : logStrings) {
+            System.out.println(s);
+        }
+    }
+
+    @Override
+    public int getNumberOfUniqueIPs(Date after, Date before) {
+        return 0;
+    }
+
+    @Override
+    public Set<String> getUniqueIPs(Date after, Date before) {
+        return null;
+    }
+
+    @Override
+    public Set<String> getIPsForUser(String user, Date after, Date before) {
+        return null;
+    }
+
+    @Override
+    public Set<String> getIPsForEvent(Event event, Date after, Date before) {
+        return null;
+    }
+
+    @Override
+    public Set<String> getIPsForStatus(Status status, Date after, Date before) {
+        return null;
+    }
+}
