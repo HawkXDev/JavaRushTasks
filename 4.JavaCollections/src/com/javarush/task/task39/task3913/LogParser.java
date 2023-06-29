@@ -1,6 +1,7 @@
 package com.javarush.task.task39.task3913;
 
 import com.javarush.task.task39.task3913.query.IPQuery;
+import com.javarush.task.task39.task3913.query.UserQuery;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -12,7 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class LogParser implements IPQuery {
+public class LogParser implements IPQuery, UserQuery {
     private final Path logDir;
     private final List<LogEntity> logs = new ArrayList<>();
     private final DateFormat formatter = new SimpleDateFormat("d.M.yyyy H:m:s");
@@ -125,6 +126,91 @@ public class LogParser implements IPQuery {
             return Integer.valueOf(split[1]);
         }
         return null;
+    }
+
+    @Override
+    public Set<String> getAllUsers() {
+        Stream<LogEntity> stream = logs.stream();
+        return getUsers(stream);
+    }
+
+    private static Set<String> getUsers(Stream<LogEntity> stream) {
+        return stream.map(LogEntity::getUsername).collect(Collectors.toSet());
+    }
+
+    @Override
+    public int getNumberOfUsers(Date after, Date before) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        return getUsers(stream).size();
+    }
+
+    @Override
+    public int getNumberOfUserEvents(String user, Date after, Date before) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        return stream.filter(entity -> entity.getUsername().equals(user))
+                .map(LogEntity::getEvent).collect(Collectors.toSet()).size();
+    }
+
+    @Override
+    public Set<String> getUsersForIP(String ip, Date after, Date before) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        stream = stream.filter(entity -> entity.getIp().equals(ip));
+        return getUsers(stream);
+    }
+
+    @Override
+    public Set<String> getLoggedUsers(Date after, Date before) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        stream = filterByEvent(stream, Event.LOGIN);
+        return getUsers(stream);
+    }
+
+    private static Stream<LogEntity> filterByEvent(Stream<LogEntity> stream, Event login) {
+        return stream.filter(entity -> entity.getEvent() == login);
+    }
+
+    @Override
+    public Set<String> getDownloadedPluginUsers(Date after, Date before) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        stream = filterByEvent(stream, Event.DOWNLOAD_PLUGIN);
+        return getUsers(stream);
+    }
+
+    @Override
+    public Set<String> getWroteMessageUsers(Date after, Date before) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        stream = filterByEvent(stream, Event.WRITE_MESSAGE);
+        return getUsers(stream);
+    }
+
+    @Override
+    public Set<String> getSolvedTaskUsers(Date after, Date before) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        stream = filterByEvent(stream, Event.SOLVE_TASK);
+        return getUsers(stream);
+    }
+
+    @Override
+    public Set<String> getSolvedTaskUsers(Date after, Date before, int task) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        stream = filterByEvent(stream, Event.SOLVE_TASK);
+        stream = stream.filter(entity -> entity.getTaskNumber() == task);
+        return getUsers(stream);
+    }
+
+    @Override
+    public Set<String> getDoneTaskUsers(Date after, Date before) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        stream = filterByEvent(stream, Event.DONE_TASK);
+        return getUsers(stream);
+    }
+
+    @Override
+    public Set<String> getDoneTaskUsers(Date after, Date before, int task) {
+        Stream<LogEntity> stream = getFilteredStream(after, before);
+        stream = filterByEvent(stream, Event.DONE_TASK);
+        stream = stream.filter(entity -> entity.getTaskNumber() == task);
+        return getUsers(stream);
     }
 }
 
