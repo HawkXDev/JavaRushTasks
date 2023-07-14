@@ -9,6 +9,6 @@ public class Solution {
         Path logPath = Paths.get(Solution.class.getProtectionDomain().getCodeSource().getLocation().getPath())
                 .resolve(Solution.class.getPackage().getName().replace('.', '/')).resolve("logs");
         LogParser logParser = new LogParser(logPath);
-        System.out.println(logParser.getNumberOfUniqueIPs(null, new Date()));
+        System.out.println(logParser.execute("get event for date = \"30.01.2014 12:56:22\""));
     }
 }

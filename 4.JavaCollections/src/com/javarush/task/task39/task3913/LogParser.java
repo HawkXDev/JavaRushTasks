@@ -25,7 +25,7 @@ public class LogParser implements IPQuery, UserQuery, DateQuery, EventQuery, QLQ
     @Override
     public int getNumberOfUniqueIPs(Date after, Date before) {
         Stream<LogEntity> stream = getFilteredStream(after, before);
-        return getCollected(stream).size();
+        return getIpsSet(stream).size();
     }
 
     private Stream<LogEntity> getFilteredStream(Date after, Date before) {
@@ -46,29 +46,29 @@ public class LogParser implements IPQuery, UserQuery, DateQuery, EventQuery, QLQ
     @Override
     public Set<String> getUniqueIPs(Date after, Date before) {
         Stream<LogEntity> stream = getFilteredStream(after, before);
-        return getCollected(stream);
+        return getIpsSet(stream);
     }
 
-    private static Set<String> getCollected(Stream<LogEntity> stream) {
+    private static Set<String> getIpsSet(Stream<LogEntity> stream) {
         return stream.map(LogEntity::getIp).collect(Collectors.toSet());
     }
 
     @Override
     public Set<String> getIPsForUser(String user, Date after, Date before) {
         Stream<LogEntity> stream = getFilteredStream(after, before);
-        return getCollected(getFilteredByName(user, stream));
+        return getIpsSet(getFilteredByName(user, stream));
     }
 
     @Override
     public Set<String> getIPsForEvent(Event event, Date after, Date before) {
         Stream<LogEntity> stream = getFilteredStream(after, before);
-        return getCollected(stream.filter(log -> log.getEvent() == event));
+        return getIpsSet(stream.filter(log -> log.getEvent() == event));
     }
 
     @Override
     public Set<String> getIPsForStatus(Status status, Date after, Date before) {
         Stream<LogEntity> stream = getFilteredStream(after, before);
-        return getCollected(stream.filter(log -> log.getStatus() == status));
+        return getIpsSet(stream.filter(log -> log.getStatus() == status));
     }
 
     private void readLogs() {
@@ -377,33 +377,102 @@ public class LogParser implements IPQuery, UserQuery, DateQuery, EventQuery, QLQ
     @Override
     public Set<Object> execute(String query) {
         String[] split = query.split(" ");
-        if (split.length != 2) {
-            return null;
-        }
+        if (split.length == 2) {
+            String command = split[0];
+            String parameter = split[1];
 
-        String command = split[0];
-        String parameter = split[1];
-
-        if (!command.equals("get")) {
-            return null;
-        }
-
-        switch (parameter) {
-            case "ip":
-                return getUniqueIPs(null, null).stream().map(x -> (Object) x).collect(Collectors.toSet());
-            case "user":
-                return getAllUsers().stream().map(x -> (Object) x).collect(Collectors.toSet());
-            case "date":
-                return getDateSet(getFilteredStream(null, null))
-                        .stream().map(x -> (Object) x).collect(Collectors.toSet());
-            case "event":
-                return getAllEvents(null, null).stream()
-                        .map(x -> (Object) x).collect(Collectors.toSet());
-            case "status":
-                return getStatusSet(null, null);
-            default:
+            if (!command.equals("get")) {
                 return null;
+            }
+
+            switch (parameter) {
+                case "ip":
+                    return getUniqueIPs(null, null).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                case "user":
+                    return getAllUsers().stream().map(x -> (Object) x).collect(Collectors.toSet());
+                case "date":
+                    return getDateSet(getFilteredStream(null, null))
+                            .stream().map(x -> (Object) x).collect(Collectors.toSet());
+                case "event":
+                    return getAllEvents(null, null).stream()
+                            .map(x -> (Object) x).collect(Collectors.toSet());
+                case "status":
+                    return getStatusSet(null, null);
+                default:
+                    return null;
+            }
+        } else if (query.matches("get (\\w+) for (\\w+) = \"(.*?)\"")) {
+            Stream<LogEntity> stream = getFilteredStream(null, null);
+
+            String forParam = split[3];
+            String param3 = query.substring(query.indexOf("\"") + 1, query.length() - 1);
+
+            switch (forParam) {
+                case "user":
+                    String username = param3;
+                    stream = stream.filter(entity -> entity.getUsername().equals(username));
+                    break;
+                case "date":
+                    Date date = getDate(param3);
+                    if (date == null) {
+                        return null;
+                    }
+                    stream = stream.filter(entity -> entity.getDate().equals(date));
+                    break;
+                case "event":
+                    Event event = Event.valueOf(param3);
+                    stream = stream.filter(entity -> entity.getEvent().equals(event));
+                    break;
+                case "status":
+                    Status status = Status.valueOf(param3);
+                    stream = stream.filter(entity -> entity.getStatus().equals(status));
+                    break;
+                case "ip":
+                    String ip = param3;
+                    stream = stream.filter(entity -> entity.getIp().equals(ip));
+                    break;
+                default:
+                    break;
+            }
+
+            String command = split[0];
+
+            if ("get".equals(command)) {
+                String getWhat = split[1];
+
+                switch (getWhat) {
+                    case "ip":
+                        return getIpsSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                    case "user":
+                        return getUsers(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                    case "date":
+                        return getDateSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                    case "event":
+                        return getEventSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                    case "status":
+                        return stream.map(LogEntity::getStatus).collect(Collectors.toSet());
+                    default:
+                        return null;
+                }
+            }
+
+            return null;
+        } else {
+            return null;
         }
+    }
+
+    private static Date getDate(String param3) {
+        String dateString = param3;
+        String pattern = "dd.MM.yyyy HH:mm:ss";
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        Date date;
+        try {
+            date = dateFormat.parse(dateString);
+        } catch (ParseException e) {
+            return null;
+        }
+        return date;
     }
 
     private Set<Object> getStatusSet(Date after, Date before) {
