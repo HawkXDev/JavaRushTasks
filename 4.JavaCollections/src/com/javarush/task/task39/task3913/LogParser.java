@@ -401,65 +401,98 @@ public class LogParser implements IPQuery, UserQuery, DateQuery, EventQuery, QLQ
                 default:
                     return null;
             }
+        } else if (query.contains("and date between")) {
+            Dates dates = extractDates(query);
+            Stream<LogEntity> stream = getFilteredStream(dates.getAfter(), dates.getBefore());
+            return getObjects(query, split, stream);
         } else if (query.matches("get (\\w+) for (\\w+) = \"(.*?)\"")) {
             Stream<LogEntity> stream = getFilteredStream(null, null);
-
-            String forParam = split[3];
-            String param3 = query.substring(query.indexOf("\"") + 1, query.length() - 1);
-
-            switch (forParam) {
-                case "user":
-                    String username = param3;
-                    stream = stream.filter(entity -> entity.getUsername().equals(username));
-                    break;
-                case "date":
-                    Date date = getDate(param3);
-                    if (date == null) {
-                        return null;
-                    }
-                    stream = stream.filter(entity -> entity.getDate().equals(date));
-                    break;
-                case "event":
-                    Event event = Event.valueOf(param3);
-                    stream = stream.filter(entity -> entity.getEvent().equals(event));
-                    break;
-                case "status":
-                    Status status = Status.valueOf(param3);
-                    stream = stream.filter(entity -> entity.getStatus().equals(status));
-                    break;
-                case "ip":
-                    String ip = param3;
-                    stream = stream.filter(entity -> entity.getIp().equals(ip));
-                    break;
-                default:
-                    break;
-            }
-
-            String command = split[0];
-
-            if ("get".equals(command)) {
-                String getWhat = split[1];
-
-                switch (getWhat) {
-                    case "ip":
-                        return getIpsSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
-                    case "user":
-                        return getUsers(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
-                    case "date":
-                        return getDateSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
-                    case "event":
-                        return getEventSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
-                    case "status":
-                        return stream.map(LogEntity::getStatus).collect(Collectors.toSet());
-                    default:
-                        return null;
-                }
-            }
-
-            return null;
+            return getObjects(query, split, stream);
         } else {
             return null;
         }
+    }
+
+    private static Set<Object> getObjects(String query, String[] split, Stream<LogEntity> stream) {
+        String forParam = split[3];
+
+        int param3Ind1 = query.indexOf("\"") + 1;
+        int param3Ind2 = query.indexOf("\"", param3Ind1);
+        String param3 = query.substring(param3Ind1, param3Ind2);
+
+        switch (forParam) {
+            case "user":
+                String username = param3;
+                stream = stream.filter(entity -> entity.getUsername().equals(username));
+                break;
+            case "date":
+                Date date = getDate(param3);
+                if (date == null) {
+                    return null;
+                }
+                stream = stream.filter(entity -> entity.getDate().equals(date));
+                break;
+            case "event":
+                Event event = Event.valueOf(param3);
+                stream = stream.filter(entity -> entity.getEvent().equals(event));
+                break;
+            case "status":
+                Status status = Status.valueOf(param3);
+                stream = stream.filter(entity -> entity.getStatus().equals(status));
+                break;
+            case "ip":
+                String ip = param3;
+                stream = stream.filter(entity -> entity.getIp().equals(ip));
+                break;
+            default:
+                break;
+        }
+
+        String command = split[0];
+
+        if ("get".equals(command)) {
+            String getWhat = split[1];
+
+            switch (getWhat) {
+                case "ip":
+                    return getIpsSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                case "user":
+                    return getUsers(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                case "date":
+                    return getDateSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                case "event":
+                    return getEventSet(stream).stream().map(x -> (Object) x).collect(Collectors.toSet());
+                case "status":
+                    return stream.map(LogEntity::getStatus).collect(Collectors.toSet());
+                default:
+                    return null;
+            }
+        }
+
+        return null;
+    }
+
+    private static Dates extractDates(String query) {
+        int dateForDateBetweenIndex = query.indexOf("and date between");
+
+        int date1Index = query.indexOf("\"", dateForDateBetweenIndex) + 1;
+        int date1EndIndex = query.indexOf("\"", date1Index);
+        String date1String = query.substring(date1Index, date1EndIndex);
+
+        int date2Index = query.indexOf("\"", date1EndIndex + 1) + 1;
+        int date2EndIndex = query.lastIndexOf("\"");
+        String date2String = query.substring(date2Index, date2EndIndex);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        Dates dates = new Dates();
+
+        try {
+            dates.setAfter(dateFormat.parse(date1String));
+            dates.setBefore(dateFormat.parse(date2String));
+        } catch (ParseException ignored) {
+        }
+
+        return dates;
     }
 
     private static Date getDate(String param3) {
@@ -480,6 +513,30 @@ public class LogParser implements IPQuery, UserQuery, DateQuery, EventQuery, QLQ
         return stream.map(LogEntity::getStatus).collect(Collectors.toSet());
     }
 
+}
+
+class Dates {
+    private Date after = null;
+    private Date before = null;
+
+    public Dates() {
+    }
+
+    public Date getAfter() {
+        return after;
+    }
+
+    public void setAfter(Date after) {
+        this.after = after;
+    }
+
+    public Date getBefore() {
+        return before;
+    }
+
+    public void setBefore(Date before) {
+        this.before = before;
+    }
 }
 
 class LogEntity {
